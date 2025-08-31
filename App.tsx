@@ -74,15 +74,23 @@ const App: React.FC = () => {
     const cvElement = document.getElementById('cv-content');
     if (!cvElement) return;
 
+    // Ensure profile image (if present) is loaded before rendering PDF to avoid it missing
+    const waitForImage = () => new Promise<void>(resolve => {
+      const img = document.getElementById('profile-photo') as HTMLImageElement | null;
+      if (!img) return resolve();
+      if (img.complete) return resolve();
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
+    });
+    await waitForImage();
+
     setIsDownloading(true);
 
     const style = document.createElement('style');
     style.id = 'temp-pdf-styles';
     style.innerHTML = `
-      @media print {
-        html, body { height: initial !important; overflow: initial !important; -webkit-print-color-adjust: exact; }
-      }
-      #cv-content { box-shadow: none !important; margin: 0 !important; padding: 0 !important; font-size: 10pt !important; color: black !important; width: 100% !important; }
+      @media print { html, body { height: initial !important; overflow: initial !important; -webkit-print-color-adjust: exact; } }
+      #cv-content { box-shadow: none !important; margin: 0 !important; padding: 10mm !important; font-size: 10pt !important; color: black !important; width: 100% !important; }
       #cv-content * { color: black !important; border-color: black !important; background-color: transparent !important; }
       .cv-icon, #pdf-download-button, .floating-actions { display: none !important; }
       .pdf-section-break { page-break-inside: avoid !important; }
@@ -90,6 +98,7 @@ const App: React.FC = () => {
       a { text-decoration: none !important; }
       .bg-gray-200 { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       #print-footer { page-break-inside: avoid !important; margin-top: 16px; }
+      #profile-photo { border: 2px solid #000 !important; }
     `;
     document.head.appendChild(style);
 
@@ -118,7 +127,7 @@ const App: React.FC = () => {
         callback: function (doc: any) { doc.save('Kasun_Hapangama_CV.pdf'); },
         margin: [15, 15, 15, 15],
         autoPaging: 'text',
-        width: 180,
+        width: 178,
         windowWidth: 800,
       });
     } catch (error) {
@@ -169,29 +178,40 @@ const App: React.FC = () => {
     <div className="bg-white min-h-screen font-serif text-black">
       <main id="cv-content" className="max-w-4xl mx-auto bg-white shadow-2xl p-8 sm:p-12 md:p-16 pb-32">
         {/* Header */}
-        <header className="text-center mb-10 pdf-section-break">
-          <h1 className="text-4xl font-bold tracking-wider">{profile.name}</h1>
-          <p className="text-lg mt-1">{profile.title}</p>
-          <div className="flex justify-center items-center gap-x-4 gap-y-2 mt-4 text-sm flex-wrap">
-            <a href={`mailto:${profile.email}`} className="flex items-center gap-1.5 hover:underline">
-              <EnvelopeIcon className="w-4 h-4 cv-icon" /> {profile.email}
-            </a>
-            <span className="hidden sm:inline">|</span>
-            <a href={`tel:${profile.phone}`} className="flex items-center gap-1.5 hover:underline">
-              <PhoneIcon className="w-4 h-4 cv-icon" /> {profile.phone}
-            </a>
-            <span className="hidden sm:inline">|</span>
-            <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
-              <LinkIcon className="w-4 h-4 cv-icon" /> {profile.website.replace('https://', '')}
-            </a>
-            {profile.socials.map(social => (
-              <React.Fragment key={social.name}>
-                <span className="hidden sm:inline">|</span>
-                <a href={social.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
-                    <GithubIcon className="w-4 h-4 cv-icon" /> {social.username}
+        <header className="mb-10 pdf-section-break">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <img
+              id="profile-photo"
+              src="profile.jpg"
+              alt={`${profile.name} profile photo`}
+              className="w-28 h-28 object-cover rounded-full border-2 border-black shadow-sm"
+              loading="eager"
+            />
+            <div className="text-center sm:text-left flex-1">
+              <h1 className="text-4xl font-bold tracking-wider">{profile.name}</h1>
+              <p className="text-lg mt-1">{profile.title}</p>
+              <div className="flex justify-center sm:justify-start items-center gap-x-4 gap-y-2 mt-4 text-sm flex-wrap">
+                <a href={`mailto:${profile.email}`} className="flex items-center gap-1.5 hover:underline">
+                  <EnvelopeIcon className="w-4 h-4 cv-icon" /> {profile.email}
                 </a>
-              </React.Fragment>
-            ))}
+                <span className="hidden sm:inline">|</span>
+                <a href={`tel:${profile.phone}`} className="flex items-center gap-1.5 hover:underline">
+                  <PhoneIcon className="w-4 h-4 cv-icon" /> {profile.phone}
+                </a>
+                <span className="hidden sm:inline">|</span>
+                <a href={profile.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
+                  <LinkIcon className="w-4 h-4 cv-icon" /> {profile.website.replace('https://', '')}
+                </a>
+                {profile.socials.map(social => (
+                  <React.Fragment key={social.name}>
+                    <span className="hidden sm:inline">|</span>
+                    <a href={social.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 hover:underline">
+                      <GithubIcon className="w-4 h-4 cv-icon" /> {social.username}
+                    </a>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
           </div>
         </header>
 
