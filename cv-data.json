@@ -160,7 +160,7 @@
       "issuer": "Oracle",
       "url": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=DB2B9B81F39ADD3B975B1DC33C8CC3F5B9597B75F563EC1816539DB3AD980EB2",
       "details": [
-        "Gained strong foundational knowledge in Java programming, OOP principles, and core API usage."
+
       ]
     },
     {
@@ -176,6 +176,14 @@
       "details": []
     },
     {
+      "name": "Dean’s List Honoree (Y1S2 & Y2S2)",
+      "issuer": "Sri Lanka Institute Of Information Technology",
+      "url": "https://www.linkedin.com/posts/kaxun_sliit-activity-7254853000156831744-IBVd",
+      "details": [
+        "Awarded for maintaining a GPA above 3.7 and demonstrating excellence in academic performance."
+      ]
+    },
+    {
       "name": "Spring: Framework in Depth",
       "issuer": "LinkedIn",
       "url": "https://www.linkedin.com/learning/certificates/90f7cc431e4f32cccb5f283120fa3bc1178eb753009968553ef022bf782cac65",
@@ -188,7 +196,7 @@
       "details": []
     },
     {
-      "name": "Creating Your First Spring Boot Microservice",
+      "name": "Spring Boot Microservices",
       "issuer": "LinkedIn",
       "url": "https://www.linkedin.com/learning/certificates/451b2002a90701e965710162bd1a0d150e73ba34470a3c23898130cc6fe0bd7d",
       "details": []
@@ -200,12 +208,10 @@
       "details": []
     },
     {
-      "name": "Dean’s List Honoree (Y1S2 & Y2S2)",
-      "issuer": "Sri Lanka Institute Of Information Technology",
-      "url": "https://www.linkedin.com/posts/kaxun_sliit-activity-7254853000156831744-IBVd",
-      "details": [
-        "Awarded for maintaining a GPA above 3.7 and demonstrating excellence in academic performance."
-      ]
+      "name": "Enterprise Architecture Foundations",
+      "issuer": "LinkedIn",
+      "url": "https://www.linkedin.com/learning/certificates/491385bd928e99c2233f4f63f47a5307f44e7165d52f7eb2450fce5b6c18702a",
+      "details": []
     }
   ],
   "organizations": [
