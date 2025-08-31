@@ -70,7 +70,7 @@ const App: React.FC = () => {
     });
   };
 
- const handleDownloadPdf = async () => {
+  const handleDownloadPdf = async () => {
     const cvElement = document.getElementById('cv-content');
     if (!cvElement) return;
 
@@ -78,76 +78,57 @@ const App: React.FC = () => {
 
     const style = document.createElement('style');
     style.id = 'temp-pdf-styles';
-    // This stylesheet creates a print-friendly version of the CV
     style.innerHTML = `
       @media print {
-        html, body {
-          height: initial !important;
-          overflow: initial !important;
-          -webkit-print-color-adjust: exact;
-        }
+        html, body { height: initial !important; overflow: initial !important; -webkit-print-color-adjust: exact; }
       }
-      #cv-content {
-        box-shadow: none !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        font-size: 10pt !important; /* Base font size for PDF */
-        color: black !important;
-        width: 100% !important;
-      }
-      #cv-content * {
-        color: black !important;
-        border-color: black !important;
-        background-color: transparent !important;
-      }
-      .cv-icon, #pdf-download-button {
-        display: none !important;
-      }
-      .pdf-section-break {
-        page-break-inside: avoid !important;
-      }
-       h1, h2, h3, h4, h5, h6 {
-        page-break-after: avoid !important;
-      }
-      a {
-        text-decoration: none !important;
-      }
-      .bg-gray-200 { /* Make skill tags readable */
-        background-color: #e5e7eb !important;
-        -webkit-print-color-adjust: exact; 
-        print-color-adjust: exact;
-      }
+      #cv-content { box-shadow: none !important; margin: 0 !important; padding: 0 !important; font-size: 10pt !important; color: black !important; width: 100% !important; }
+      #cv-content * { color: black !important; border-color: black !important; background-color: transparent !important; }
+      .cv-icon, #pdf-download-button, .floating-actions { display: none !important; }
+      .pdf-section-break { page-break-inside: avoid !important; }
+      h1, h2, h3, h4, h5, h6 { page-break-after: avoid !important; }
+      a { text-decoration: none !important; }
+      .bg-gray-200 { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      #print-footer { page-break-inside: avoid !important; margin-top: 16px; }
     `;
     document.head.appendChild(style);
 
+    // Add footer with QR code + link for PDF/print
+    const footer = document.createElement('div');
+    footer.id = 'print-footer';
+    footer.innerHTML = `
+      <div style="display:flex; align-items:center; gap:16px; border-top:1px solid #000; padding-top:8px; font-size:10pt;">
+        <div id="print-footer-qr" style="width:80px;height:80px;"></div>
+        <div style="flex:1; line-height:1.4;">
+          <strong>View Online:</strong> <span>${shareUrl}</span><br/>
+          <span>Scan the QR code to view the always up-to-date web version.</span>
+        </div>
+      </div>`;
+    cvElement.appendChild(footer);
+    try {
+      new QRCode(document.getElementById('print-footer-qr'), { text: shareUrl, width: 80, height: 80, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    } catch (e) {
+      console.warn('QR generation failed for footer', e);
+    }
+
     try {
       const { jsPDF } = jspdf;
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      // The html method is asynchronous and returns a promise
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       await doc.html(cvElement, {
-        callback: function (doc: any) {
-          doc.save('Kasun_Hapangama_CV.pdf');
-        },
+        callback: function (doc: any) { doc.save('Kasun_Hapangama_CV.pdf'); },
         margin: [15, 15, 15, 15],
         autoPaging: 'text',
-        width: 180, // A4 width (210) - margins (15*2)
-        windowWidth: 800, // A fixed, reasonable width for layout calculation
+        width: 180,
+        windowWidth: 800,
       });
-
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Sorry, there was an error creating the PDF. Please try again.");
+      console.error('Error generating PDF:', error);
+      alert('Sorry, there was an error creating the PDF. Please try again.');
     } finally {
-      // Cleanup: remove the temporary stylesheet
       const tempStyle = document.getElementById('temp-pdf-styles');
-      if (tempStyle) {
-        document.head.removeChild(tempStyle);
-      }
+      if (tempStyle) document.head.removeChild(tempStyle);
+      const footerEl = document.getElementById('print-footer');
+      if (footerEl && footerEl.parentNode) footerEl.parentNode.removeChild(footerEl);
       setIsDownloading(false);
     }
   };
@@ -185,8 +166,8 @@ const App: React.FC = () => {
   const { profile, summary, skills, experience, projects, education, certificates, organizations } = cvData;
 
   return (
-    <div className="bg-gray-100 min-h-screen font-serif text-black">
-      <main id="cv-content" className="max-w-4xl mx-auto bg-white shadow-2xl p-8 sm:p-12 md:p-16 my-8">
+    <div className="bg-white min-h-screen font-serif text-black">
+      <main id="cv-content" className="max-w-4xl mx-auto bg-white shadow-2xl p-8 sm:p-12 md:p-16 pb-32">
         {/* Header */}
         <header className="text-center mb-10 pdf-section-break">
           <h1 className="text-4xl font-bold tracking-wider">{profile.name}</h1>
@@ -297,7 +278,7 @@ const App: React.FC = () => {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
         {/* Certificates */}
         <Section title="Certificates">
@@ -320,8 +301,8 @@ const App: React.FC = () => {
               </div>
             ))}
           </div>
-        </section>
-        
+        </Section>
+
         {/* Professional Affiliations */}
         <Section title="Professional Affiliations">
           <div className="space-y-4">
@@ -341,8 +322,7 @@ const App: React.FC = () => {
       </main>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-8 right-8 flex flex-col items-end gap-4 z-50">
-        
+      <div className="floating-actions fixed bottom-4 right-4 sm:bottom-8 sm:right-8 flex flex-col items-end gap-4 z-50">
         {/* Share Button with expanding Box */}
         <div 
             className="relative"
@@ -350,28 +330,30 @@ const App: React.FC = () => {
             onMouseLeave={() => setIsShareBoxVisible(false)}
         >
             <div 
-                className={`absolute bottom-0 right-full mr-4 w-72 p-4 bg-white border border-gray-200 rounded-lg shadow-xl transition-all duration-300 origin-right ${isShareBoxVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
+                className={`absolute bottom-0 right-full mr-4 w-80 p-4 bg-white border border-gray-200 rounded-lg shadow-xl transition-all duration-300 origin-right ${isShareBoxVisible ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
             >
-                <div className="flex items-center justify-between gap-4">
-                    <div className="text-left flex-grow">
-                        <p className="font-bold text-sm">Share Link</p>
-                        <div className="flex items-center mt-2">
-                            <input type="text" readOnly value={shareUrl} className="text-xs p-1.5 border rounded-l-md bg-gray-100 flex-grow" />
-                            <button onClick={handleCopyLink} className="p-1.5 border border-l-0 rounded-r-md bg-gray-200 hover:bg-gray-300" aria-label="Copy link">
-                                {isLinkCopied ? (
-                                    <span className="text-green-600 font-bold text-xs px-1">Copied!</span>
-                                ) : (
-                                    <ClipboardIcon className="w-4 h-4" />
-                                )}
-                            </button>
-                        </div>
+                <p className="font-bold text-sm mb-2">Share Link</p>
+                <div className="flex gap-4 items-start">
+                  <div className="flex-grow">
+                    <div className="flex items-center">
+                      <input type="text" readOnly value={shareUrl} className="text-xs p-1.5 border rounded-l-md bg-gray-100 flex-grow" />
+                      <button onClick={handleCopyLink} className="p-1.5 border border-l-0 rounded-r-md bg-gray-200 hover:bg-gray-300" aria-label="Copy link">
+                        {isLinkCopied ? (
+                          <span className="text-green-600 font-bold text-[10px] px-1">Copied!</span>
+                        ) : (
+                          <ClipboardIcon className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
-                    <div ref={qrCodeRef} id="qr-code-container" className="p-1 bg-white border rounded shrink-0 w-[88px] h-[88px] flex items-center justify-center"></div>
+                    <p className="text-[10px] text-gray-600 mt-2 leading-snug">Scan or copy to view the always up-to-date online CV.</p>
+                  </div>
+                  <div ref={qrCodeRef} id="qr-code-container" className="p-1 bg-white border rounded w-[88px] h-[88px] flex items-center justify-center overflow-hidden"></div>
                 </div>
             </div>
             <button
                 className="bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-transform transform hover:scale-105 z-10"
                 aria-label="Share CV"
+                onClick={() => setIsShareBoxVisible(v => !v)}
             >
                 <ShareIcon className="w-6 h-6" />
             </button>
