@@ -1,0 +1,225 @@
+
+{
+  "profile": {
+    "name": "Kasun Hapangama",
+    "title": "Software Engineer | Java, Spring Boot & C# .NET",
+    "email": "kasun@hapangama.com",
+    "phone": "+94766370705",
+    "website": "https://kasun.hapangama.com",
+    "socials": [
+      {
+        "name": "GitHub",
+        "url": "https://github.com/ka0un",
+        "username": "ka0un"
+      }
+    ]
+  },
+  "summary": "Java Backend Developer with 2 years of experience building secure APIs and web applications using Java, Spring Boot, Hibernate, and MyBatis. Currently pursuing a degree in Software Engineering at SLIIT. Certified as an Oracle Certified Associate, Java SE 8 Programmer.",
+  "skills": [
+    "Java", "Spring Boot", "Spring Framework", "Spring Security", "Microservices", "Hibernate", "JPA", "MyBatis", "C#", ".NET", "REST APIs", "Test Automation", "Selenium", "SQL", "Git", "Agile Methodologies", "Oracle Cloud (OCI)", "Vaadin", "Minecraft Plugin Development"
+  ],
+  "experience": [
+    {
+      "role": "Junior Software Engineer",
+      "company": "SoftSora",
+      "location": "Colombo, Sri Lanka",
+      "url": "https://softsora.com/",
+      "period": "Dec 2023 - Present",
+      "tasks": [
+        "Developed secure and scalable APIs for the CTN Project, improving data protection and reliability.",
+        "Built core functionalities for the Osaka Gas Project, supporting key business operations.",
+        "Improved system performance and automated test cases to streamline development and QA."
+      ]
+    },
+    {
+      "role": "Software Engineer Intern",
+      "company": "SoftSora",
+      "location": "Colombo, Sri Lanka",
+      "url": "https://softsora.com/",
+      "period": "Jun 2023 - Dec 2023",
+      "tasks": [
+        "Developed secure APIs for merchant registration as part of the CTN project.",
+        "Collaborated with cross-functional teams to deliver efficient solutions.",
+        "Enabled system access for 1000+ merchants, enhancing integration and availability."
+      ]
+    },
+    {
+      "role": "Plugin Developer",
+      "company": "Summit Realms",
+      "location": "UK - Remote",
+      "url": "https://summitrealms.com",
+      "period": "Oct 2023 - Feb 2024",
+      "tasks": [
+        "Developed custom server-side addons for Minecraft at Summit Realms to meet client needs.",
+        "Created a server-side event management system for Spigot servers.",
+        "Collaborated with team members to ensure seamless integration of plugins.",
+        "Enhanced user experience by optimizing plugin performance and functionality."
+      ]
+    },
+    {
+      "role": "Plugin Developer (Part Time)",
+      "company": "SunDevs",
+      "location": "Sri Lanka",
+      "url": "https://sundevs.hapangama.com",
+      "period": "Apr 2023 - Present",
+      "tasks": [
+        "Developed open-source software products, server-side video game addons, and web applications.",
+        "Sold 100+ copies, garnering over $1200+ in revenue and 5000+ downloads on various online forums."
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "name": "SunLicense | Software License Management System",
+      "revenue": "$1200+ Sales",
+      "url": "https://sunlicense.hapangama.com",
+      "description": "A comprehensive license management system built using Java Spring Boot and Vaadin.",
+      "details": [
+        "Offers secure license validation, automated role assignment, and RESTful API integration.",
+        "Features an intuitive web dashboard, temporary licenses, and IP/HWID restrictions.",
+        "Achieved $1000+ in revenue and 50+ active customers within 2.5 months of launch."
+      ]
+    },
+    {
+      "name": "SunGuard | Code Obfuscator",
+      "revenue": "$200+ Sales",
+      "url": "http://sunguard.hapangama.com/",
+      "description": "A web-based tool that wraps popular Java obfuscators to protect applications.",
+      "details": [
+        "Features obfuscation, anti-debugging, and runtime checks for Java and Lua.",
+        "Gained early traction with 30+ customers and positive community feedback."
+      ]
+    },
+    {
+      "name": "CTN Project",
+      "url": "https://ctn-net.jp",
+      "description": "Mainstream bulk vehicle assessment service in Japan.",
+      "details": [
+        "Developed APIs for the Merchant Portal, enabling secure data access for customers.",
+        "Successfully registered over 1,000 new merchants in the system.",
+        "Enhanced database performance by designing and optimizing queries with JPA and MyBatis."
+      ]
+    },
+    {
+        "name": "SlackL (FOSS)",
+        "url": "https://github.com/ka0un/SlackL",
+        "description": "An open-source, self-hosted Slack bot integrating DeepL translations.",
+        "details": [
+          "Directly addressed a company need for seamless multilingual communication.",
+          "Enabled real-time translation, enhancing cross-language team collaboration."
+        ]
+    },
+    {
+        "name": "Discord Leaderboards Premium",
+        "revenue": "$200+ Sales",
+        "url": "https://dlp.hapangama.com",
+        "description": "A Minecraft addon to seamlessly integrate game leaderboards with Discord.",
+        "details": [
+          "Designed and developed a high-performance, server-side Java addon.",
+          "Supports distributed Minecraft servers with over 100,000 concurrent players."
+        ]
+    },
+    {
+      "name": "Library Management System",
+      "url": "https://prototype.hapangama.com",
+      "description": "University Year 1, Semester 2 Project.",
+      "details": [
+        "Developed a full-stack library management application as part of academic coursework."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "degree": "BSc (Hons) in Information Technology - Specialized In Software Engineering",
+      "institution": "Sri Lanka Institute Of Information Technology",
+      "url": "https://www.sliit.lk/",
+      "gpa": "3.55",
+      "details": [
+        "Achieved Dean’s List recognition for outstanding academic performance.",
+        "Active member of SLIIT FOSS Community, contributing to events promoting open-source software."
+      ]
+    },
+    {
+      "degree": "G.C.E. Advanced Level",
+      "institution": "Nalanda College Colombo",
+      "url": "#",
+      "gpa": "AAC (2023)",
+      "details": []
+    },
+    {
+      "degree": "G.C.E. Ordinary Level",
+      "institution": "Carey College, Colombo",
+      "url": "#",
+      "gpa": "7A 1B (2020)",
+      "details": []
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Oracle Certified Associate, Java SE 8 Programmer",
+      "issuer": "Oracle",
+      "url": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=DB2B9B81F39ADD3B975B1DC33C8CC3F5B9597B75F563EC1816539DB3AD980EB2",
+      "details": [
+        "Gained strong foundational knowledge in Java programming, OOP principles, and core API usage."
+      ]
+    },
+    {
+      "name": "Oracle Cloud Infrastructure 2023 Certified Foundations Associate",
+      "issuer": "Oracle",
+      "url": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=9A0A1BF53722B80017C3B92E76871C82F0534FD07613DC90C6A82A8E052DBE3A",
+      "details": []
+    },
+    {
+      "name": "Oracle Cloud Infrastructure 2023 AI Foundations Associate",
+      "issuer": "Oracle",
+      "url": "https://catalog-education.oracle.com/ords/certview/sharebadge?id=05A77EA2079F47E065129ABDE670150E05BEA3106D3AC38E2FC2C28F5E531B41",
+      "details": []
+    },
+    {
+      "name": "Spring: Framework in Depth",
+      "issuer": "LinkedIn",
+      "url": "https://www.linkedin.com/learning/certificates/90f7cc431e4f32cccb5f283120fa3bc1178eb753009968553ef022bf782cac65",
+      "details": []
+    },
+    {
+      "name": "Spring: Spring Security",
+      "issuer": "LinkedIn",
+      "url": "https://www.linkedin.com/learning/certificates/05b84a8a46064da48f4c6d99ad4ae4803e0c6405fb3f7999b40cf51a5261d205",
+      "details": []
+    },
+    {
+      "name": "Creating Your First Spring Boot Microservice",
+      "issuer": "LinkedIn",
+      "url": "https://www.linkedin.com/learning/certificates/451b2002a90701e965710162bd1a0d150e73ba34470a3c23898130cc6fe0bd7d",
+      "details": []
+    },
+    {
+      "name": "Selenium Essential Training",
+      "issuer": "LinkedIn",
+      "url": "https://www.linkedin.com/learning/certificates/0d3b7655a6c95825c44835ac86e3e42a53b11acf940c5d86c3d6979e231e08ed",
+      "details": []
+    },
+    {
+      "name": "Dean’s List Honoree (Y1S2 & Y2S2)",
+      "issuer": "Sri Lanka Institute Of Information Technology",
+      "url": "https://www.linkedin.com/posts/kaxun_sliit-activity-7254853000156831744-IBVd",
+      "details": [
+        "Awarded for maintaining a GPA above 3.7 and demonstrating excellence in academic performance."
+      ]
+    }
+  ],
+  "organizations": [
+    {
+      "name": "IEEE & IEEE Industry Applications Society",
+      "role": "Member",
+      "period": "July 2024 - Present",
+      "description": "Member Number: 101467140"
+    },
+    {
+      "name": "SLIIT FOSS Community",
+      "role": "Member",
+      "period": "June 2024 - Present",
+      "description": "Contributing to events and initiatives promoting free and open-source software."
+    }
+  ]
+}
