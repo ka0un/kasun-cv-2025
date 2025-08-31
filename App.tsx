@@ -92,6 +92,8 @@ const App: React.FC = () => {
       @media print { html, body { height: initial !important; overflow: initial !important; -webkit-print-color-adjust: exact; } }
       #cv-content { box-shadow: none !important; margin: 0 !important; padding: 10mm !important; font-size: 10pt !important; color: black !important; width: 100% !important; }
       #cv-content * { color: black !important; border-color: black !important; background-color: transparent !important; }
+      /* Added extra spacing under section headings for PDF readability */
+      #cv-content h2 { padding-bottom: 10px !important; margin-bottom: 18px !important; border-bottom: 2px solid #000 !important; }
       .cv-icon, #pdf-download-button, .floating-actions { display: none !important; }
       .pdf-section-break { page-break-inside: avoid !important; }
       h1, h2, h3, h4, h5, h6 { page-break-after: avoid !important; }

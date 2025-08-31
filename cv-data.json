@@ -16,7 +16,7 @@
   },
   "summary": "Java Backend Developer with 2 years of experience building secure APIs and web applications using Java, Spring Boot, Hibernate, and MyBatis. Currently pursuing a degree in Software Engineering at SLIIT. Certified as an Oracle Certified Associate, Java SE 8 Programmer.",
   "skills": [
-    "Java", "Spring Boot", "Spring Framework", "Spring Security", "Microservices", "Hibernate", "JPA", "MyBatis", "C#", ".NET", "REST APIs", "Test Automation", "Selenium", "SQL", "Git", "Agile Methodologies", "Oracle Cloud (OCI)", "Vaadin", "Minecraft Plugin Development"
+    "Java", "Spring Boot", "Spring Framework", "Spring Security", "Microservices", "Hibernate", "JPA", "MyBatis", "C#", ".NET", "REST APIs", "Test Automation", "Selenium", "SQL", "Git", "Agile Methodologies", "Oracle Cloud (OCI)", "Vaadin", "AWS", "Docker", "Linux", "Maven", "Gradle"
   ],
   "experience": [
     {
@@ -205,12 +205,6 @@
       "name": "Selenium Essential Training",
       "issuer": "LinkedIn",
       "url": "https://www.linkedin.com/learning/certificates/0d3b7655a6c95825c44835ac86e3e42a53b11acf940c5d86c3d6979e231e08ed",
-      "details": []
-    },
-    {
-      "name": "Enterprise Architecture Foundations",
-      "issuer": "LinkedIn",
-      "url": "https://www.linkedin.com/learning/certificates/491385bd928e99c2233f4f63f47a5307f44e7165d52f7eb2450fce5b6c18702a",
       "details": []
     }
   ],
