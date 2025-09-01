@@ -184,6 +184,9 @@ const App: React.FC = () => {
       /* Ensure long words/URLs wrap cleanly without overflow */
       #cv-content a span { word-break: break-word; overflow-wrap: anywhere; }
       .version-toast { display: none !important; }
+      /* PDF spacing fix (narrow scope): some viewers rendered intra-word spaces too narrow (e.g. 'Scan the' looked like 'Scanthe').
+         Lightly increase word-spacing ONLY for typical text containers to avoid changing overall layout. */
+      #cv-content p, #cv-content li, #cv-content span, #cv-content a { word-spacing: 0.06em !important; letter-spacing: normal !important; }
     `;
     document.head.appendChild(style);
 
