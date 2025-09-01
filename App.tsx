@@ -90,7 +90,7 @@ const App: React.FC = () => {
     style.id = 'temp-pdf-styles';
     style.innerHTML = `
       @media print { html, body { height: initial !important; overflow: initial !important; -webkit-print-color-adjust: exact; } }
-      #cv-content { box-shadow: none !important; margin: 0 !important; padding: 10mm !important; font-size: 10pt !important; color: black !important; width: 100% !important; }
+      #cv-content { box-shadow: none !important; margin: 0 !important; padding: 10mm !important; font-size: 10pt !important; color: black !important; width: 800px !important; max-width: 800px !important; }
       #cv-content * { color: black !important; border-color: black !important; background-color: transparent !important; }
       /* Added extra spacing under section headings for PDF readability */
       #cv-content h2 { padding-bottom: 10px !important; margin-bottom: 18px !important; border-bottom: 2px solid #000 !important; }
@@ -101,6 +101,13 @@ const App: React.FC = () => {
       .bg-gray-200 { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       #print-footer { page-break-inside: avoid !important; margin-top: 16px; }
       #profile-photo { border: 2px solid #000 !important; }
+      /* Stabilize headers to avoid flex wrap inconsistencies in html2canvas */
+      #cv-content .exp-header, #cv-content .project-header, #cv-content .edu-header { display: grid !important; grid-template-columns: 1fr auto; align-items: start; column-gap: 8px; }
+      #cv-content .company-link, #cv-content .institution-link { display:block !important; }
+      /* Prevent list bullets shifting due to grid context */
+      #cv-content ul { padding-left: 1rem !important; }
+      /* Ensure long words/URLs wrap cleanly without overflow */
+      #cv-content a span { word-break: break-word; overflow-wrap: anywhere; }
     `;
     document.head.appendChild(style);
 
@@ -238,10 +245,10 @@ const App: React.FC = () => {
           <div className="space-y-6">
             {experience.map((job, index) => (
               <div key={index} className="pdf-section-break">
-                <div className="flex justify-between items-start flex-wrap gap-x-2">
+                <div className="flex justify-between items-start flex-wrap gap-x-2 exp-header">
                     <div>
                         <h3 className="font-bold text-base">{job.role}</h3>
-                        <a href={job.url} target="_blank" rel="noopener noreferrer" className="text-sm italic hover:underline">
+                        <a href={job.url} target="_blank" rel="noopener noreferrer" className="text-sm italic hover:underline company-link">
                             {job.company}
                         </a>
                     </div>
@@ -263,7 +270,7 @@ const App: React.FC = () => {
             <div className="space-y-6">
                 {projects.map((project, index) => (
                     <div key={index} className="pdf-section-break">
-                        <div className="flex justify-between items-baseline flex-wrap gap-x-2">
+                        <div className="flex justify-between items-baseline flex-wrap gap-x-2 project-header">
                             <h3 className="font-bold text-base">{project.name}</h3>
                             {project.revenue && <p className="text-sm font-light bg-gray-200 px-2 py-0.5 rounded">{project.revenue}</p>}
                         </div>
@@ -287,11 +294,11 @@ const App: React.FC = () => {
           <div className="space-y-4">
             {education.map((edu, index) => (
               <div key={index} className="pdf-section-break">
-                 <div className="flex justify-between items-baseline flex-wrap">
+                 <div className="flex justify-between items-baseline flex-wrap edu-header">
                     <h3 className="font-bold text-base">{edu.degree}</h3>
                     {edu.gpa && <p className="text-sm font-light">{edu.gpa}</p>}
                 </div>
-                 <a href={edu.url} target="_blank" rel="noopener noreferrer" className="text-sm italic hover:underline">
+                 <a href={edu.url} target="_blank" rel="noopener noreferrer" className="text-sm italic hover:underline institution-link">
                   {edu.institution}
                 </a>
                 <ul className="list-disc list-inside mt-1 space-y-1 text-sm leading-relaxed">
