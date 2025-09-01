@@ -269,9 +269,9 @@ const App: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-4 mt-1 flex-wrap">
                             <p className="text-sm italic">{project.description}</p>
-                             <a href={project.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:underline flex items-center gap-1.5">
+                             <a href={project.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:underline flex items-center gap-1.5 max-w-full break-all whitespace-normal w-full sm:w-auto">
                                 <LinkIcon className="w-3.5 h-3.5 cv-icon" />
-                                <span>{formatUrl(project.url)}</span>
+                                <span className="break-all max-w-full leading-snug sm:leading-normal">{formatUrl(project.url)}</span>
                             </a>
                         </div>
                         <ul className="list-disc list-inside mt-2 space-y-1 text-sm leading-relaxed">
@@ -311,9 +311,9 @@ const App: React.FC = () => {
                  <div className="flex items-center gap-4 mt-1 flex-wrap">
                     <p className="text-sm italic">{cert.issuer}</p>
                      {cert.url && cert.url !== '#' && (
-                        <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:underline flex items-center gap-1.5">
+                        <a href={cert.url} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:underline flex items-center gap-1.5 max-w-full break-all whitespace-normal w-full sm:w-auto">
                             <LinkIcon className="w-3.5 h-3.5 cv-icon" />
-                            <span>{formatUrl(cert.url)}</span>
+                            <span className="break-all max-w-full leading-snug sm:leading-normal">{formatUrl(cert.url)}</span>
                         </a>
                     )}
                 </div>
