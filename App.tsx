@@ -21,53 +21,128 @@ const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title
 );
 
 const App: React.FC = () => {
+  // Edition & version parsing from URL
+  const path = typeof window !== 'undefined' ? window.location.pathname : '';
+  const editionMatch = path.match(/(?:^|\/)e\/([^\/]+)(?:\/(?:v\/([A-Za-z0-9]{4,10}))?)?/);
+  const rootVersionMatch = !editionMatch ? path.match(/(?:^|\/)v\/([A-Za-z0-9]{4,10})/) : null;
+  const initialEdition = editionMatch ? decodeURIComponent(editionMatch[1]) : null;
+  const providedVersionFromUrl = editionMatch ? editionMatch[2] || null : (rootVersionMatch ? rootVersionMatch[1] : null);
+
+  const [edition, setEdition] = useState<string | null>(initialEdition);
+  const [versionHash, setVersionHash] = useState<string | null>(null);
+  const [versionStatus, setVersionStatus] = useState<'unknown'|'match'|'mismatch'>('unknown');
   const [cvData, setCvData] = useState<CVData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadTooltipVisible, setIsDownloadTooltipVisible] = useState(false);
   const [isShareBoxVisible, setIsShareBoxVisible] = useState(false);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const [showVersionToast, setShowVersionToast] = useState(false);
   const qrCodeRef = useRef<HTMLDivElement>(null);
   const qrCodeInstanceRef = useRef<any>(null);
-  const shareUrl = "https://cv.hapangama.com";
+  const previousQrUrlRef = useRef<string | null>(null);
 
+  // Compute share URL once we know versionHash
+  const configuredBaseOrigin = 'https://cv.hapangama.com';
+  const runtimeOrigin = (typeof window !== 'undefined') ? window.location.origin : configuredBaseOrigin;
+  // Always use canonical domain for share/QR so printed / shared links resolve to production
+  const baseOrigin = configuredBaseOrigin || runtimeOrigin;
+  const shareUrl = versionHash ? (
+    edition ? `${baseOrigin}/e/${encodeURIComponent(edition)}/v/${versionHash}` : `${baseOrigin}/v/${versionHash}`
+  ) : (edition ? `${baseOrigin}/e/${encodeURIComponent(edition)}` : baseOrigin);
 
-  useEffect(() => {
-    fetch('./cv-data.json')
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => setCvData(data as CVData))
-      .catch(e => {
-        console.error("Failed to fetch CV data:", e);
-        setError("Failed to load CV data. Please check the console for more details.");
-      });
-  }, []);
-  
-  // Generate QR Code only when the share box is visible
-  useEffect(() => {
-    if (isShareBoxVisible && qrCodeRef.current && !qrCodeInstanceRef.current) {
-      qrCodeInstanceRef.current = new QRCode(qrCodeRef.current, {
-        text: shareUrl,
-        width: 80,
-        height: 80,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
+  // Hash generator (stable deterministic 6-char uppercase base36)
+  const computeVersionHash = (data: any) => {
+    const json = JSON.stringify(data);
+    let hash = 5381;
+    for (let i = 0; i < json.length; i++) {
+      hash = ((hash << 5) + hash) ^ json.charCodeAt(i);
     }
+    hash = hash >>> 0; // unsigned
+    const base36 = hash.toString(36).toUpperCase();
+    return base36.padStart(6, '0').slice(-6);
+  };
+
+  // Load CV data with edition fallback
+  useEffect(() => {
+    const load = async () => {
+      const fileForEdition = edition ? `/cv-data-${edition}.json` : '/cv-data.json';
+      try {
+        let response = await fetch(fileForEdition);
+        if (!response.ok) {
+          if (edition) {
+            // fallback to base file
+            response = await fetch('/cv-data.json');
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+            setEdition(null);
+            try { window.history.replaceState({}, '', `/${providedVersionFromUrl ? 'v/' + providedVersionFromUrl : ''}`); } catch(_) {}
+          } else {
+            throw new Error(`HTTP error ${response.status}`);
+          }
+        }
+        const data = await response.json();
+        setCvData(data as CVData);
+        const vHash = computeVersionHash(data);
+        setVersionHash(vHash);
+      } catch (e:any) {
+        console.error('Failed to fetch CV data:', e);
+        setError('Failed to load CV data.');
+      }
+    };
+    load();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [edition]);
+
+  // Generate / update QR code when share box visible or shareUrl changes
+  useEffect(() => {
+    if (!isShareBoxVisible) return;
+    if (!qrCodeRef.current) return;
+    if (previousQrUrlRef.current === shareUrl) return;
+    // Reset container
+    qrCodeRef.current.innerHTML = '';
+    qrCodeInstanceRef.current = new QRCode(qrCodeRef.current, {
+      text: shareUrl,
+      width: 80,
+      height: 80,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+    previousQrUrlRef.current = shareUrl;
   }, [isShareBoxVisible, shareUrl]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(shareUrl).then(() => {
       setIsLinkCopied(true);
-      setTimeout(() => setIsLinkCopied(false), 2000); // Reset after 2 seconds
+      setTimeout(() => setIsLinkCopied(false), 2000);
     }).catch(err => {
       console.error('Failed to copy link: ', err);
     });
+  };
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'CV' + (edition ? ` (${edition})` : ''),
+            text: 'Latest online CV version' + (versionHash ? ` (v${versionHash})` : ''),
+          url: shareUrl
+        });
+        return true;
+      } catch (e) {
+        console.warn('Native share canceled or failed', e);
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const handleShareButtonClick = async () => {
+    const usedNative = await handleNativeShare();
+    if (!usedNative) {
+      // fallback to existing hover box toggle
+      setIsShareBoxVisible(v => !v);
+    }
   };
 
   const handleDownloadPdf = async () => {
@@ -108,18 +183,21 @@ const App: React.FC = () => {
       #cv-content ul { padding-left: 1rem !important; }
       /* Ensure long words/URLs wrap cleanly without overflow */
       #cv-content a span { word-break: break-word; overflow-wrap: anywhere; }
+      .version-toast { display: none !important; }
     `;
     document.head.appendChild(style);
 
     // Add footer with QR code + link for PDF/print
     const footer = document.createElement('div');
     footer.id = 'print-footer';
+    const generatedDate = new Date().toISOString().split('T')[0];
     footer.innerHTML = `
       <div style="display:flex; align-items:center; gap:16px; border-top:1px solid #000; padding-top:8px; font-size:10pt;">
         <div id="print-footer-qr" style="width:80px;height:80px;"></div>
         <div style="flex:1; line-height:1.4;">
           <strong>View Online:</strong> <span>${shareUrl}</span><br/>
-          <span>Scan the QR code to view the always up-to-date web version.</span>
+          <span>Scan the QR code to view the always up-to-date web version.</span><br/>
+          <span>Edition: ${edition ? edition : 'base'} | Version: ${versionHash || '-'} | Generated: ${generatedDate}</span>
         </div>
       </div>`;
     cvElement.appendChild(footer);
@@ -161,6 +239,22 @@ const App: React.FC = () => {
     }
   }
 
+  // Update versionStatus based on providedVersionFromUrl and versionHash
+  useEffect(() => {
+    if (versionStatus === 'unknown' && providedVersionFromUrl && versionHash) {
+      setVersionStatus(providedVersionFromUrl === versionHash ? 'match' : 'mismatch');
+    }
+  }, [versionStatus, providedVersionFromUrl, versionHash]);
+
+  // Trigger transient toast when a version param is present and status resolved
+  useEffect(() => {
+    if (providedVersionFromUrl && versionStatus !== 'unknown') {
+      setShowVersionToast(true);
+      const timer = setTimeout(() => setShowVersionToast(false), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [providedVersionFromUrl, versionStatus]);
+
   if (error) {
      return (
       <div className="bg-gray-100 min-h-screen font-serif text-black">
@@ -186,15 +280,26 @@ const App: React.FC = () => {
   return (
     <div className="bg-white min-h-screen font-serif text-black">
       <main id="cv-content" className="max-w-4xl mx-auto bg-white shadow-2xl p-8 sm:p-12 md:p-16 pb-32">
+        {/* Version Banner removed per request */}
+
         {/* Header */}
         <header className="mb-10 pdf-section-break">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
             <img
               id="profile-photo"
-              src="profile.jpg"
+              src="/profile.jpg"
               alt={`${profile.name} profile photo`}
               className="w-28 h-28 object-cover rounded-full border-2 border-black shadow-sm"
               loading="eager"
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!img.dataset.fallbackTried) {
+                  img.dataset.fallbackTried = '1';
+                  img.src = 'profile.jpg'; // try relative as fallback
+                } else {
+                  img.style.display = 'none';
+                }
+              }}
             />
             <div className="text-center sm:text-left flex-1">
               <h1 className="text-4xl font-bold tracking-wider">{profile.name}</h1>
@@ -382,7 +487,7 @@ const App: React.FC = () => {
             <button
                 className="bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-transform transform hover:scale-105 z-10"
                 aria-label="Share CV"
-                onClick={() => setIsShareBoxVisible(v => !v)}
+                onClick={handleShareButtonClick}
             >
                 <ShareIcon className="w-6 h-6" />
             </button>
@@ -417,6 +522,21 @@ const App: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Version Toast (hidden in PDF) */}
+      {showVersionToast && (
+        <div className={`version-toast-pointer fixed top-4 right-4 z-50 max-w-sm ${versionStatus === 'match' ? 'bg-green-600' : 'bg-yellow-600'} text-white shadow-lg rounded-md p-4 flex items-start gap-3`}>
+          <div className="flex-1 text-sm leading-snug">
+            {versionStatus === 'match' && (
+              <>This CV (v{providedVersionFromUrl}) is up to date.</>
+            )}
+            {versionStatus === 'mismatch' && (
+              <>Paper CV version v{providedVersionFromUrl} is outdated. Latest is v{versionHash}. Use the web version for the newest details.</>
+            )}
+          </div>
+          <button aria-label="Close version notice" className="text-white/80 hover:text-white text-xs font-bold" onClick={() => setShowVersionToast(false)}>✕</button>
+        </div>
+      )}
 
     </div>
   );
