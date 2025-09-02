@@ -12,6 +12,7 @@ import { ClipboardIcon } from './components/icons/ClipboardIcon';
 // These are loaded from CDN in index.html
 declare const jspdf: any;
 declare const QRCode: any;
+declare const html2canvas: any;
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <section className="mb-8 pdf-section-break">
@@ -149,6 +150,39 @@ const App: React.FC = () => {
     const cvElement = document.getElementById('cv-content');
     if (!cvElement) return;
 
+    // Helper: embed custom font (Inter Regular) into jsPDF before rendering
+    const ensurePdfFont = async (doc: any) => {
+      try {
+        const fontFamily = 'Inter';
+        const fontFileName = 'Inter-Regular.ttf';
+        // If already added skip
+        if (doc.getFontList?.()[fontFamily]?.includes('normal')) {
+          doc.setFont(fontFamily, 'normal');
+          return;
+        }
+        // Fetch local TTF (place Inter-Regular.ttf at project root or adjust path)
+        const fontUrl = '/Inter-Regular.ttf';
+        const resp = await fetch(fontUrl, { cache: 'force-cache' });
+        if (!resp.ok) throw new Error('Font fetch failed ' + resp.status);
+        const buffer = await resp.arrayBuffer();
+        // Convert ArrayBuffer -> Base64 efficiently in chunks to avoid stack issues
+        const bytes = new Uint8Array(buffer);
+        const chunkSize = 0x8000;
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        const base64 = btoa(binary);
+        doc.addFileToVFS(fontFileName, base64);
+        doc.addFont(fontFileName, fontFamily, 'normal');
+        doc.setFont(fontFamily, 'normal');
+      } catch (e) {
+        console.warn('Custom font embedding failed, falling back to Times.', e);
+        try { doc.setFont('Times', 'normal'); } catch(_) {}
+      }
+    };
+
     // Ensure profile image (if present) is loaded before rendering PDF to avoid it missing
     const waitForImage = () => new Promise<void>(resolve => {
       const img = document.getElementById('profile-photo') as HTMLImageElement | null;
@@ -161,36 +195,25 @@ const App: React.FC = () => {
 
     setIsDownloading(true);
 
-    const style = document.createElement('style');
-    style.id = 'temp-pdf-styles';
-    style.innerHTML = `
-      @media print { html, body { height: initial !important; overflow: initial !important; -webkit-print-color-adjust: exact; } }
-      #cv-content { box-shadow: none !important; margin: 0 !important; padding: 10mm !important; font-size: 10pt !important; color: black !important; width: 800px !important; max-width: 800px !important; }
-      #cv-content * { color: black !important; border-color: black !important; background-color: transparent !important; }
-      /* Added extra spacing under section headings for PDF readability */
-      #cv-content h2 { padding-bottom: 10px !important; margin-bottom: 18px !important; border-bottom: 2px solid #000 !important; }
-      .cv-icon, #pdf-download-button, .floating-actions { display: none !important; }
-      .pdf-section-break { page-break-inside: avoid !important; }
-      h1, h2, h3, h4, h5, h6 { page-break-after: avoid !important; }
-      a { text-decoration: none !important; }
-      .bg-gray-200 { background-color: #e5e7eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      #print-footer { page-break-inside: avoid !important; margin-top: 16px; }
-      #profile-photo { border: 2px solid #000 !important; }
-      /* Stabilize headers to avoid flex wrap inconsistencies in html2canvas */
-      #cv-content .exp-header, #cv-content .project-header, #cv-content .edu-header { display: grid !important; grid-template-columns: 1fr auto; align-items: start; column-gap: 8px; }
-      #cv-content .company-link, #cv-content .institution-link { display:block !important; }
-      /* Prevent list bullets shifting due to grid context */
-      #cv-content ul { padding-left: 1rem !important; }
-      /* Ensure long words/URLs wrap cleanly without overflow */
-      #cv-content a span { word-break: break-word; overflow-wrap: anywhere; }
-      .version-toast { display: none !important; }
-      /* PDF spacing fix (narrow scope): some viewers rendered intra-word spaces too narrow (e.g. 'Scan the' looked like 'Scanthe').
-         Lightly increase word-spacing ONLY for typical text containers to avoid changing overall layout. */
-      #cv-content p, #cv-content li, #cv-content span, #cv-content a { word-spacing: 0.06em !important; letter-spacing: normal !important; }
-    `;
-    document.head.appendChild(style);
+    // NATURAL dimensions BEFORE any PDF temp styles
+    const naturalWidthPx = Math.ceil(cvElement.getBoundingClientRect().width);
 
-    // Add footer with QR code + link for PDF/print
+    // Create a hidden clone with fixed printable width (180mm) to avoid scaling distortions
+    const PRINTABLE_WIDTH_MM = 180; // A4 width 210 - 2*15mm
+    const MM_TO_PX = 96 / 25.4; // ≈3.7795
+    const cloneWidthPx = Math.round(PRINTABLE_WIDTH_MM * MM_TO_PX);
+    const clone = cvElement.cloneNode(true) as HTMLElement;
+    clone.id = 'cv-pdf-clone';
+    clone.style.width = cloneWidthPx + 'px';
+    clone.style.maxWidth = cloneWidthPx + 'px';
+    clone.style.position = 'absolute';
+    clone.style.left = '-10000px';
+    clone.style.top = '0';
+    clone.style.background = '#ffffff';
+    // Remove interactive / hidden elements inside clone
+    clone.querySelectorAll('.floating-actions, #pdf-download-button, .version-toast').forEach(el => el.remove());
+
+    // Append footer to clone instead of live element
     const footer = document.createElement('div');
     footer.id = 'print-footer';
     const generatedDate = new Date().toISOString().split('T')[0];
@@ -203,31 +226,80 @@ const App: React.FC = () => {
           <span>Edition: ${edition ? edition : 'base'} | Version: ${versionHash || '-'} | Generated: ${generatedDate}</span>
         </div>
       </div>`;
-    cvElement.appendChild(footer);
-    try {
-      new QRCode(document.getElementById('print-footer-qr'), { text: shareUrl, width: 80, height: 80, colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
-    } catch (e) {
-      console.warn('QR generation failed for footer', e);
-    }
+    clone.appendChild(footer);
+    document.body.appendChild(clone);
+    try { new QRCode(clone.querySelector('#print-footer-qr'), { text: shareUrl, width: 80, height: 80, colorDark: '#000', colorLight: '#fff', correctLevel: QRCode.CorrectLevel.H }); } catch(_){ }
+
+    const style = document.createElement('style');
+    style.id = 'temp-pdf-styles';
+    style.innerHTML = `
+      @font-face { font-family: 'Inter'; src: url('/Inter-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
+      #cv-pdf-clone { font-size:10pt !important; color:#000 !important; font-family: 'Inter','Times New Roman',Times,serif !important; }
+      #cv-pdf-clone * { color:#000 !important; background:transparent !important; font-family:inherit !important; box-shadow:none !important; }
+      #cv-pdf-clone h2 { padding-bottom:8px !important; margin-bottom:14px !important; border-bottom:2px solid #000 !important; }
+      #cv-pdf-clone a { text-decoration:none !important; }
+      #cv-pdf-clone .pdf-section-break { page-break-inside:auto !important; }
+      #cv-pdf-clone h1, #cv-pdf-clone h2, #cv-pdf-clone h3, #cv-pdf-clone h4, #cv-pdf-clone h5, #cv-pdf-clone h6 { page-break-after:avoid !important; }
+      #cv-pdf-clone #profile-photo { border:2px solid #000 !important; }
+    `;
+    document.head.appendChild(style);
 
     try {
       const { jsPDF } = jspdf;
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      await doc.html(cvElement, {
-        callback: function (doc: any) { doc.save('Kasun_Hapangama_CV.pdf'); },
-        margin: [15, 15, 15, 15],
-        autoPaging: 'text',
-        width: 178,
-        windowWidth: 800,
+      const marginMm = 15; // uniform margins
+      const pageWidthMm = 210;
+      const pageHeightMm = 297;
+      const printableWidthMm = pageWidthMm - marginMm * 2; // 180
+      const printableHeightMm = pageHeightMm - marginMm * 2; // 267
+
+      // Snapshot clone to canvas
+      const canvas = await html2canvas(clone, {
+        backgroundColor: '#ffffff',
+        scale: 2, // higher scale for sharpness
+        useCORS: true,
+        logging: false,
+        windowWidth: cloneWidthPx
       });
+
+      const imgWidthPx = canvas.width; // equals cloneWidthPx * scale
+      const imgHeightPx = canvas.height;
+
+      // Conversion factors
+      const pxPerMm = imgWidthPx / printableWidthMm; // derived so width fits exactly into printable area
+      const pageHeightPx = printableHeightMm * pxPerMm;
+
+      const totalPages = Math.ceil(imgHeightPx / pageHeightPx);
+      console.log('[PDF] canvas', { imgWidthPx, imgHeightPx, printableWidthMm, printableHeightMm, pxPerMm, pageHeightPx, totalPages });
+
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      for (let page = 0; page < totalPages; page++) {
+        if (page > 0) doc.addPage();
+        const sx = 0;
+        const sy = Math.floor(page * pageHeightPx);
+        const sHeight = Math.min(pageHeightPx, imgHeightPx - sy);
+
+        // Create a temporary page slice canvas
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgWidthPx;
+        pageCanvas.height = sHeight;
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) ctx.drawImage(canvas, sx, sy, imgWidthPx, sHeight, 0, 0, imgWidthPx, sHeight);
+
+        const imgData = pageCanvas.toDataURL('image/jpeg', 0.92);
+        const renderHeightMm = (sHeight / pxPerMm);
+        doc.addImage(imgData, 'JPEG', marginMm, marginMm, printableWidthMm, renderHeightMm);
+      }
+
+      doc.save('Kasun_Hapangama_CV.pdf');
+
     } catch (error) {
       console.error('Error generating PDF:', error);
       alert('Sorry, there was an error creating the PDF. Please try again.');
     } finally {
       const tempStyle = document.getElementById('temp-pdf-styles');
       if (tempStyle) document.head.removeChild(tempStyle);
-      const footerEl = document.getElementById('print-footer');
-      if (footerEl && footerEl.parentNode) footerEl.parentNode.removeChild(footerEl);
+      if (clone && clone.parentNode) clone.parentNode.removeChild(clone);
       setIsDownloading(false);
     }
   };
