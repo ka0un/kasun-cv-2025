@@ -15,9 +15,9 @@ const PDF_CONFIG = {
   PAGE_WIDTH_MM: 210,
   PAGE_HEIGHT_MM: 297,
   PAGE_MARGIN_MM: 15,
-  PRINTABLE_WIDTH_MM: 180, // (210 - 2*15)
+  PRINTABLE_WIDTH_MM: 180,
   BASE_FONT_PT: 10,
-  SHRINK_FACTOR: 0.9, // <--- adjust to scale everything down (e.g. 0.85 for more shrink)
+  SHRINK_FACTOR: 0.8, // smaller PDF overall
   HTML2CANVAS_SCALE: 2, // internal bitmap sharpness (keep constant for consistency)
 };
 
@@ -161,6 +161,39 @@ const App: React.FC = () => {
     const cvElement = document.getElementById('cv-content');
     if (!cvElement) return;
 
+    // Helper: embed custom font (Inter Regular) into jsPDF before rendering
+    const ensurePdfFont = async (doc: any) => {
+      try {
+        const fontFamily = 'Inter';
+        const fontFileName = 'Inter-Regular.ttf';
+        // If already added skip
+        if (doc.getFontList?.()[fontFamily]?.includes('normal')) {
+          doc.setFont(fontFamily, 'normal');
+          return;
+        }
+        // Fetch local TTF (place Inter-Regular.ttf at project root or adjust path)
+        const fontUrl = '/Inter-Regular.ttf';
+        const resp = await fetch(fontUrl, { cache: 'force-cache' });
+        if (!resp.ok) throw new Error('Font fetch failed ' + resp.status);
+        const buffer = await resp.arrayBuffer();
+        // Convert ArrayBuffer -> Base64 efficiently in chunks to avoid stack issues
+        const bytes = new Uint8Array(buffer);
+        const chunkSize = 0x8000;
+        let binary = '';
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          const chunk = bytes.subarray(i, i + chunkSize);
+            binary += String.fromCharCode.apply(null, Array.from(chunk));
+        }
+        const base64 = btoa(binary);
+        doc.addFileToVFS(fontFileName, base64);
+        doc.addFont(fontFileName, fontFamily, 'normal');
+        doc.setFont(fontFamily, 'normal');
+      } catch (e) {
+        console.warn('Custom font embedding failed, falling back to Times.', e);
+        try { doc.setFont('Times', 'normal'); } catch(_) {}
+      }
+    };
+
     // Ensure profile image (if present) is loaded before rendering PDF to avoid it missing
     const waitForImage = () => new Promise<void>(resolve => {
       const img = document.getElementById('profile-photo') as HTMLImageElement | null;
@@ -172,6 +205,9 @@ const App: React.FC = () => {
     await waitForImage();
 
     setIsDownloading(true);
+
+    // NATURAL dimensions BEFORE any PDF temp styles
+    const naturalWidthPx = Math.ceil(cvElement.getBoundingClientRect().width);
 
     // Create a hidden clone with fixed printable width (180mm) to avoid scaling distortions
     const PRINTABLE_WIDTH_MM = PDF_CONFIG.PRINTABLE_WIDTH_MM;
@@ -188,25 +224,6 @@ const App: React.FC = () => {
     const shrink = PDF_CONFIG.SHRINK_FACTOR;
     // Remove interactive / hidden elements inside clone
     clone.querySelectorAll('.floating-actions, #pdf-download-button, .version-toast').forEach(el => el.remove());
-
-    // PDF-only transformation: expand hidden separators and force single-line contact header
-    try {
-      const contactContainer = clone.querySelector('.contact-links');
-      if (contactContainer) {
-        // Ensure separators (spans) are visible
-        contactContainer.querySelectorAll('span.hidden').forEach(span => { (span as HTMLElement).style.display = 'inline'; });
-      }
-      // Replace certificate link text with full URL (stored in data-full-url) for PDF only
-      clone.querySelectorAll('a[data-full-url]').forEach(a => {
-        const full = a.getAttribute('data-full-url');
-        if (full) {
-          const textSpan = a.querySelector('span');
-          if (textSpan) textSpan.textContent = full;
-        }
-      });
-      // Remove all icon SVGs for PDF version only
-      clone.querySelectorAll('.cv-icon').forEach(el => el.remove());
-    } catch(_) {}
 
     // Append footer to clone instead of live element
     const footer = document.createElement('div');
@@ -229,33 +246,54 @@ const App: React.FC = () => {
     style.id = 'temp-pdf-styles';
     style.innerHTML = `
       @font-face { font-family: 'Inter'; src: url('/Inter-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
-      #cv-pdf-clone { font-size:${PDF_CONFIG.BASE_FONT_PT * shrink}pt !important; line-height:1.25 !important; color:#000 !important; font-family: 'Inter','Times New Roman',Times,serif !important; padding:${10 * shrink}mm !important; box-sizing:border-box; }
+      #cv-pdf-clone { font-size:${PDF_CONFIG.BASE_FONT_PT * shrink}pt !important; line-height:1.2 !important; color:#000 !important; font-family: 'Inter','Times New Roman',Times,serif !important; padding:${9 * shrink}mm !important; box-sizing:border-box; }
       #cv-pdf-clone * { color:#000 !important; background:transparent !important; font-family:inherit !important; box-shadow:none !important; }
-      #cv-pdf-clone h1 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 2.6 * shrink).toFixed(2)}pt !important; }
-      #cv-pdf-clone h2 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 1.6 * shrink).toFixed(2)}pt !important; padding-bottom:${6 * shrink}px !important; margin-bottom:${12 * shrink}px !important; border-bottom:2px solid #000 !important; }
-      #cv-pdf-clone h3 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 1.25 * shrink).toFixed(2)}pt !important; }
+      #cv-pdf-clone h1 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 2.4 * shrink).toFixed(2)}pt !important; }
+      #cv-pdf-clone h2 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 1.5 * shrink).toFixed(2)}pt !important; padding-bottom:${5 * shrink}px !important; margin-bottom:${8 * shrink}px !important; border-bottom:1px solid #000 !important; }
+      #cv-pdf-clone h3 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 1.18 * shrink).toFixed(2)}pt !important; }
       #cv-pdf-clone a { text-decoration:none !important; }
       #cv-pdf-clone .pdf-section-break { page-break-inside:auto !important; }
       #cv-pdf-clone h1, #cv-pdf-clone h2, #cv-pdf-clone h3, #cv-pdf-clone h4, #cv-pdf-clone h5, #cv-pdf-clone h6 { page-break-after:avoid !important; }
-      #cv-pdf-clone #profile-photo { border:${2 * shrink}px solid #000 !important; width:${(112 * shrink).toFixed(0)}px !important; height:${(112 * shrink).toFixed(0)}px !important; }
-      #cv-pdf-clone ul { padding-left:${16 * shrink}px !important; }
-      #cv-pdf-clone li { margin-bottom:${2 * shrink}px !important; }
-      /* Single-line header contacts */
-      #cv-pdf-clone .contact-links { display:flex !important; flex-wrap:nowrap !important; gap:${6*shrink}px !important; align-items:center !important; font-size:${(PDF_CONFIG.BASE_FONT_PT * 0.9 * shrink).toFixed(2)}pt !important; }
+      #cv-pdf-clone #profile-photo { border:${2 * shrink}px solid #000 !important; width:${(100 * shrink).toFixed(0)}px !important; height:${(100 * shrink).toFixed(0)}px !important; }
+      #cv-pdf-clone section.pdf-section-break { margin-bottom:${14 * shrink}px !important; }
+      #cv-pdf-clone ul { padding-left:${14 * shrink}px !important; margin-top:${4 * shrink}px !important; }
+      #cv-pdf-clone li { margin-bottom:${1 * shrink}px !important; }
+      #cv-pdf-clone .space-y-6 > * + * { margin-top:${16 * shrink}px !important; }
+      #cv-pdf-clone .space-y-4 > * + * { margin-top:${10 * shrink}px !important; }
+      #cv-pdf-clone .text-base, #cv-pdf-clone .text-sm { font-size:${(PDF_CONFIG.BASE_FONT_PT * shrink).toFixed(2)}pt !important; }
+      #cv-pdf-clone .skill-chip { padding:${1 * shrink}px ${6 * shrink}px !important; line-height:1.1 !important; }
+      #cv-pdf-clone .contact-links { display:flex !important; flex-wrap:nowrap !important; gap:${5*shrink}px !important; align-items:center !important; font-size:${(PDF_CONFIG.BASE_FONT_PT * 0.85 * shrink).toFixed(2)}pt !important; }
       #cv-pdf-clone .contact-links a { white-space:nowrap !important; }
       #cv-pdf-clone .contact-links span.hidden { display:inline !important; }
-      /* Tighter project/cert link block - keep description and link on same line */
-      #cv-pdf-clone div.flex.items-center.gap-4.mt-1.flex-wrap { gap:${4*shrink}px !important; margin-top:${2*shrink}px !important; }
+      #cv-pdf-clone div.flex.items-center.gap-4.mt-1.flex-wrap { gap:${3*shrink}px !important; margin-top:${1*shrink}px !important; }
       #cv-pdf-clone div.flex.items-center.gap-4.mt-1.flex-wrap a { display:inline-flex !important; width:auto !important; margin-top:0 !important; word-break:break-all !important; }
       #cv-pdf-clone a[data-full-url] span { word-break:break-all !important; }
-      /* Reduce paragraph bottom margin inside these flex blocks */
       #cv-pdf-clone div.flex.items-center.gap-4.mt-1.flex-wrap p { margin:0 !important; }
     `;
     document.head.appendChild(style);
 
+    // PDF-only DOM transformations
+    try {
+      const contactContainer = clone.querySelector('.contact-links');
+      if (contactContainer) {
+        contactContainer.querySelectorAll('span.hidden').forEach(s => { (s as HTMLElement).style.display = 'inline'; });
+      }
+      // Expand certificate URLs to full form using data attribute
+      clone.querySelectorAll('a[data-full-url]').forEach(a => {
+        const full = a.getAttribute('data-full-url');
+        if (full) {
+          const span = a.querySelector('span');
+            if (span) span.textContent = full;
+        }
+      });
+      // Remove icons
+      clone.querySelectorAll('.cv-icon').forEach(el => el.remove());
+    } catch(_) {}
+
     try {
       const { jsPDF } = jspdf;
       const marginMm = PDF_CONFIG.PAGE_MARGIN_MM; // uniform margins
+      const pageWidthMm = PDF_CONFIG.PAGE_WIDTH_MM;
       const pageHeightMm = PDF_CONFIG.PAGE_HEIGHT_MM;
       const printableWidthMm = PRINTABLE_WIDTH_MM; // already defined
       const printableHeightMm = pageHeightMm - marginMm * 2; // 297 - 30 = 267
@@ -421,7 +459,7 @@ const App: React.FC = () => {
         <Section title="Skills">
           <div className="flex flex-wrap gap-2">
             {skills.map(skill => (
-              <span key={skill} className="bg-gray-200 text-gray-800 text-sm font-medium px-2.5 py-1 rounded">
+              <span key={skill} className="bg-gray-200 text-gray-800 text-sm font-medium px-2.5 py-1 rounded skill-chip">
                 {skill}
               </span>
             ))}
