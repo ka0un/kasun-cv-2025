@@ -248,7 +248,11 @@ const App: React.FC = () => {
       @font-face { font-family: 'Inter'; src: url('/Inter-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; }
       #cv-pdf-clone { font-size:${PDF_CONFIG.BASE_FONT_PT * shrink}pt !important; line-height:1.2 !important; color:#000 !important; font-family: 'Inter','Times New Roman',Times,serif !important; padding:${9 * shrink}mm !important; box-sizing:border-box; }
       #cv-pdf-clone * { color:#000 !important; background:transparent !important; font-family:inherit !important; box-shadow:none !important; }
-      #cv-pdf-clone h1 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 2.4 * shrink).toFixed(2)}pt !important; }
+      /* Reduced top padding & header bottom margin to tighten header vertical space */
+      #cv-pdf-clone { padding-top:${3 * shrink}mm !important; }
+      #cv-pdf-clone header { margin-top:0 !important; }
+      #cv-pdf-clone header.mb-10 { margin-bottom:${16 * shrink}px !important; }
+      #cv-pdf-clone h1 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 2.4 * shrink).toFixed(2)}pt !important; margin-top:0 !important; }
       #cv-pdf-clone h2 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 1.5 * shrink).toFixed(2)}pt !important; padding-bottom:${5 * shrink}px !important; margin-bottom:${8 * shrink}px !important; border-bottom:1px solid #000 !important; }
       #cv-pdf-clone h3 { font-size:${(PDF_CONFIG.BASE_FONT_PT * 1.18 * shrink).toFixed(2)}pt !important; }
       #cv-pdf-clone a { text-decoration:none !important; }
